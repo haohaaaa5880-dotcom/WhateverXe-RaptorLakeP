@@ -44,7 +44,7 @@ constexpr DeviceEntry DeviceTable[] {
     {0xA782, Family::RaptorLakeS, Display::XeD, GT::Unknown, "Intel UHD Graphics 730"},
     {0xA788, Family::RaptorLakeS, Display::XeD, GT::Unknown, "Intel UHD Graphics"},
     {0xA78B, Family::RaptorLakeS, Display::XeD, GT::Unknown, "Intel UHD Graphics"},
-    {0xA7A0, Family::RaptorLakeP, Display::XeLPD, GT::Unknown, "Intel Iris Xe Graphics"},
+    {0xA7A0, Family::RaptorLakeP, Display::XeLPD, GT::RPLPMedium, "Intel Iris Xe Graphics"},
     {0xA7A1, Family::RaptorLakeP, Display::XeLPD, GT::Unknown, "Intel Iris Xe Graphics"},
     {0xA7A8, Family::RaptorLakeP, Display::XeLPD, GT::RPLPMedium, "Intel UHD Graphics"},
     {0xA7A9, Family::RaptorLakeP, Display::XeLPD, GT::Unknown, "Intel UHD Graphics"},

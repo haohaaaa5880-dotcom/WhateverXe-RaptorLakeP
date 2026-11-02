@@ -59,8 +59,8 @@ inline bool qualifiedGT(uint32_t slice, uint32_t dss, uint32_t euDisable,
                         uint32_t l3Disable, uint32_t media, AlderLakeN::Resources &out) {
     out = {};
     Resources r;
-    if (!resources(slice, dss, euDisable, l3Disable, media, r) || dss != 0xF || euDisable ||
-        (l3Disable&0xFFU) != 0x88 || media != 0x000E00FE)
+    if (!resources(slice, dss, euDisable, l3Disable, media, r) || dss != 0x1F || euDisable ||
+        (l3Disable&0xFFU) != 0x88 || media != 0x000E00FA)
         return false;
     out = {r.slices, r.dss, r.nativeSubslices, r.eus, l3Banks(l3Disable), 64*l3Banks(l3Disable)};
     return true;
@@ -222,7 +222,7 @@ template<class IO> EDPReadout readEDP(IO &io, const AlderLakeN::DisplayReadout &
 namespace CapsReply {
 enum class Status : uint32_t {Untouched, Rewritten, Disabled, Error, BadSize, NotA7A8};
 constexpr uint64_t Size = 0x7C;
-constexpr uint32_t Physical = 0xA7A88086, Presented = 0x9A498086, PresentedADLN = 0x46D08086;
+constexpr uint32_t Physical = 0xA7A08086, Presented = 0x9A498086, PresentedADLN = 0x46D08086;
 inline uint32_t identity(const uint8_t *reply) {
     return reply[8] | uint32_t(reply[9]) << 8 | uint32_t(reply[10]) << 16 | uint32_t(reply[11]) << 24;
 }
