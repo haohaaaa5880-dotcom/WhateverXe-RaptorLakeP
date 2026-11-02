@@ -26,7 +26,7 @@ int main() {
   auto nonIntel=select(0x123410DE,rev,true,&value,4);assert(!nonIntel.admitted());
   if(entry.family==Family::RaptorLakeP)for(uint32_t other:{0U,1U,3U,5U,255U})assert(!identify(pci,other).admitted());
  }
- assert(implemented==9); // Recognition of other table rows adds no native backend.
+ assert(implemented==10); // Recognition of other table rows adds no native backend.
  uint32_t id=0x46D2;
  assert(select(0x12348086,0,true,&id,4).admitted());
  assert(!select(0x12348086,1,true,&id,4).admitted()); // Keep physical stepping guard.
