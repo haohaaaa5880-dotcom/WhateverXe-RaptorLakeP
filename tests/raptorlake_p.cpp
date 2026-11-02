@@ -89,7 +89,7 @@ int main() {
         ++catalogued;
         // Only the measured A7A8 has a backend, admitted at revision 4 (GT C0 / display E0) alone.
         // The rest stay recognition only: no GT backend, donor, admission or probe ABI.
-        const bool measured=entry.device==0xA7A8;
+        const bool measured=entry.device==0xA7A8 || entry.device==0xA7A0;
         for(uint32_t revision:{0U,3U,4U,5U,8U,12U}) {
             const auto p=XELP::identify(pci,revision);
             assert(p.display==XELP::Display::XeLPD && p.gt==(measured ? XELP::GT::RPLPMedium : XELP::GT::Unknown));
@@ -134,15 +134,15 @@ int main() {
     assert(RaptorLakeP::l3Banks(0xf0)==4 && RaptorLakeP::l3Banks(0x88)==6 && RaptorLakeP::l3Banks(0)==8);
     assert(RaptorLakeP::l3Banks(0xff)==0 && RaptorLakeP::l3Banks(0xf00)==8 && RaptorLakeP::l3Banks(0x188)==6);
     AlderLakeN::Resources gtRes;
-    assert(RaptorLakeP::qualifiedGT(1,0xf,0,0x88,0xe00fe,gtRes));
-    assert(gtRes.slices==1 && gtRes.dss==4 && gtRes.nativeSubslices==8 && gtRes.eus==64);
+    assert(RaptorLakeP::qualifiedGT(1,0x1f,0,0x88,0xe00fa,gtRes));
+    assert(gtRes.slices==1 && gtRes.dss==5 && gtRes.nativeSubslices==10 && gtRes.eus==80);
     assert(gtRes.l3Banks==6 && gtRes.urbKiB==384);
     // Upper 0x9118 bits are not bank disables; the measured low byte is what qualifies.
-    assert(RaptorLakeP::qualifiedGT(1,0xf,0,0x10088,0xe00fe,gtRes) && gtRes.l3Banks==6);
+    assert(RaptorLakeP::qualifiedGT(1,0x1f,0,0x10088,0xe00fa,gtRes) && gtRes.l3Banks==6);
     unsigned qualified=0;
     for(unsigned dss=0;dss<0x80;++dss)for(unsigned disabled:{0U,1U,0x88U,0xfeU})
         for(unsigned l3:{0U,0x88U,0xf0U,0x8U})for(unsigned media:{0xe00feU,0xe00faU,0U}) {
-            const bool expected=dss==0xf && !disabled && l3==0x88 && media==0xe00fe;
+            const bool expected=dss==0x1f && !disabled && l3==0x88 && media==0xe00fa;
             assert(RaptorLakeP::qualifiedGT(1,dss,disabled,l3,media,gtRes)==expected);
             if(expected)++qualified;else assert(!gtRes.eus && !gtRes.l3Banks && !gtRes.urbKiB);
         }
@@ -227,12 +227,12 @@ int main() {
     assert(stuck.forcewake.status==GTStatus::ReleaseFailed && stuck.forcewake.releaseFailedMask==1 && !stuck.resources.eus);
     std::puts("RaptorLakeP GT forcewake ownership, release and profile re-evaluation fixtures passed");
     // The shared Display 13 path reads through AlderLakeN::readGT (with its EDRAM read), then qualify().
-    auto measured=firmwareGT();measured.regs[0x9118]=0x88;measured.regs[0x9140]=0xe00fe;
+    auto measured=firmwareGT();measured.regs[0x913c]=0x1f;measured.regs[0x9118]=0x88;
     uint32_t edram=0;
     auto shared=AlderLakeN::readGT(measured,true,&edram);
     assert(shared.status==GTStatus::ProfileMismatch && !shared.resources.eus);
     RaptorLakeP::qualify(shared);
-    assert(shared.status==GTStatus::Complete && shared.resources.nativeSubslices==8 && shared.resources.eus==64);
+    assert(shared.status==GTStatus::Complete && shared.resources.nativeSubslices==10 && shared.resources.eus==80);
     assert(shared.resources.l3Banks==6 && shared.resources.urbKiB==384);
     auto unqualified=firmwareGT();
     auto other=AlderLakeN::readGT(unqualified,true,&edram);RaptorLakeP::qualify(other);
@@ -240,7 +240,7 @@ int main() {
     auto ownedIO=firmwareGT();ownedIO.regs[0xA188]=1;
     auto owned=AlderLakeN::readGT(ownedIO,true,&edram);RaptorLakeP::qualify(owned);
     assert(owned.status==GTStatus::ExistingOwner);
-    std::puts("RaptorLakeP qualify: shared ADL-N readout re-judged to 8 subslices, 6 banks, 64 EU passed");
+    std::puts("RaptorLakeP qualify: shared ADL-N readout re-judged to 10 subslices, 6 banks, 80 EU passed");
 
     IO absent;
     const AlderLakeN::DisplayReadout none;
@@ -297,7 +297,7 @@ int main() {
     {
         using namespace RaptorLakeP::CapsReply;
         uint8_t reply[Size];for(unsigned i=0;i<Size;++i)reply[i]=uint8_t(0x30+i);
-        reply[8]=0x86;reply[9]=0x80;reply[10]=0xA8;reply[11]=0xA7;
+        reply[8]=0x86;reply[9]=0x80;reply[10]=0xA0;reply[11]=0xA7;
         uint8_t expected[Size];std::memcpy(expected,reply,Size);expected[10]=0x49;expected[11]=0x9A;
         assert(identity(reply)==Physical && adapt(reply,Size,0,true)==Status::Rewritten);
         assert(identity(reply)==Presented && !std::memcmp(reply,expected,Size));
@@ -305,7 +305,7 @@ int main() {
         uint8_t other[Size];std::memcpy(other,expected,Size);other[10]=0xD2;other[11]=0x46;
         uint8_t copy[Size];std::memcpy(copy,other,Size);
         assert(adapt(other,Size,0,true)==Status::NotA7A8 && !std::memcmp(other,copy,Size));
-        uint8_t a7a8[Size];std::memcpy(a7a8,expected,Size);a7a8[10]=0xA8;a7a8[11]=0xA7;std::memcpy(copy,a7a8,Size);
+        uint8_t a7a8[Size];std::memcpy(a7a8,expected,Size);a7a8[10]=0xA0;a7a8[11]=0xA7;std::memcpy(copy,a7a8,Size);
         assert(adapt(a7a8,Size,0,false)==Status::Disabled && !std::memcmp(a7a8,copy,Size));
         assert(adapt(a7a8,Size,int(0xE00002BC),true)==Status::Error && !std::memcmp(a7a8,copy,Size));
         assert(adapt(a7a8,Size-4,0,true)==Status::BadSize && adapt(a7a8,0,0,true)==Status::BadSize);
